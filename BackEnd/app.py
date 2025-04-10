@@ -156,6 +156,18 @@ def denoise():
     try:
         # Setup args for predict.main based on selected model
         checkpoint_path = MODELS[model_id]['checkpoint']
+
+        # Add this block to auto-download from a release or public URL
+        if not os.path.exists(checkpoint_path):
+            print("Checkpoint not found. Downloading...")
+            import requests
+            os.makedirs(os.path.dirname(checkpoint_path), exist_ok=True)
+            url = "https://github.com/Kvgohokar/DL-Audio-Denoising-_AML-Project/releases/download/WaveUNet/checkpoint"  # <-- your actual URL
+            r = requests.get(url)
+            with open(checkpoint_path, 'wb') as f:
+                f.write(r.content)
+            print("Download complete.")
+            
         args = Namespace(
             instruments=['clean'],
             cuda=False,
