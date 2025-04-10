@@ -6,11 +6,15 @@ from flask import Flask, render_template, request, send_file, redirect, url_for
 from werkzeug.utils import secure_filename
 from argparse import Namespace
 
-# Path to predict.py
+# Correct relative path to predict.py
 PREDICT_DIR = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '..', 'DL-Audio-Denoising-_AML-Project-Wave-U-Ner-V1', 'src', 'models', 'Wave-U-Net-Pytorch')
+    os.path.join(os.path.dirname(__file__), '..', '..', 'DL-Audio-Denoising-_AML-Project', 'src', 'models', 'Wave-U-Net-Pytorch')
 )
 sys.path.append(PREDICT_DIR)
+
+# Optional: check if path is correct
+print(f"Added PREDICT_DIR to sys.path: {PREDICT_DIR}")
+print("Directory contents:", os.listdir(PREDICT_DIR))
 
 # Import the main function from predict.py
 from predict import main
