@@ -1,11 +1,8 @@
-python==3.9
-pip
-numpy
+numpy==1.26.4
 librosa
 h5py
 tqdm
-pip:
-torch            # latest version supported on ARM (usually 2.x+)
+torch
 torchvision
 musdb
 museval
@@ -13,8 +10,7 @@ future
 soundfile
 tensorboard
 sortedcontainers
-streamlit        # for web interface
-numpy==1.26.4
+streamlit
 datasets
 torchaudio
 resampy
