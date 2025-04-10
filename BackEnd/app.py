@@ -13,13 +13,13 @@ PREDICT_DIR = os.path.abspath(
 
 # Step 2: Add to system path
 sys.path.append(PREDICT_DIR)
-print("Added PREDICT_DIR to sys.path:", PREDICT_DIR)
+# print("Added PREDICT_DIR to sys.path:", PREDICT_DIR)
 
-# Optional: Check if the directory exists and list contents
-if os.path.exists(PREDICT_DIR):
-    print("Directory contents:", os.listdir(PREDICT_DIR))
-else:
-    print("❌ Path does not exist:", PREDICT_DIR)
+# # Optional: Check if the directory exists and list contents
+# if os.path.exists(PREDICT_DIR):
+#     print("Directory contents:", os.listdir(PREDICT_DIR))
+# else:
+#     print("❌ Path does not exist:", PREDICT_DIR)
 
 # Import the main function from predict.py
 from predict import main
@@ -223,6 +223,6 @@ def download_file(filename):
         download_name='cleaned_audio.wav'
     )
 
-if __name__ == '__main__':
-    # For local development
-    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))  # Render will override PORT
+    app.run(debug=True, host='0.0.0.0', port=port)
