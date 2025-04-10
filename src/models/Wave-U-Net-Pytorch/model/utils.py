@@ -21,9 +21,9 @@ def load_model(model, optimizer, path, cuda):
     if isinstance(model, torch.nn.DataParallel):
         model = model.module  # load state dict of wrapped module
     if cuda:
-        checkpoint = torch.load(path)
+        checkpoint = torch.load(path,weights_only=True)
     else:
-        checkpoint = torch.load(path, map_location='cpu')
+        checkpoint = torch.load(path, map_location='cpu',weights_only=False)
     try:
         model.load_state_dict(checkpoint['model_state_dict'])
     except:
