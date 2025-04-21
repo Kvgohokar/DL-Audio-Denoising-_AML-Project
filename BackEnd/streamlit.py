@@ -36,89 +36,84 @@ st.set_page_config(
 )
 
 #https://drive.google.com/file/d/1yqU7jYETAqlJNAYvfbY6o6xmWCwYtQKc/view?usp=drive_link
-# Custom CSS for dark and light mode compatibility
+import streamlit as st
+
 st.markdown("""
 <style>
-    /* Common styles for both themes */
+    :root, [data-theme="light"], [data-theme="dark"] {
+        --primary-color: #7afff0;
+        --text-color-light: #07f5da; /* Purple text */
+        --text-color-dark: #07f5da;
+        --background-color-light: #0a0a0a; /* White background */
+        --background-color-dark: #0a0a0a;
+        --border-color-light: #7AC6D2;
+        --border-color-dark: #2C2C2C;
+    }
+
+    body, .stApp, .block-container {
+        background-color: var(--background-color-light) !important;
+        color: var(--text-color-light) !important;
+    }
+
+    [data-theme="dark"] body, [data-theme="dark"] .stApp, [data-theme="dark"] .block-container {
+        background-color: var(--background-color-dark) !important;
+        color: var(--text-color-dark) !important;
+    }
+
     .logo {
         font-size: 2.5rem;
         font-weight: bold;
-        color: #8338ec;
+        color: var(--primary-color);
         text-transform: uppercase;
         letter-spacing: 2px;
         text-align: center;
         margin-bottom: 1rem;
     }
+
     .tagline {
-        color: var(--text-color);
+        color: inherit;
         font-size: 1.2rem; 
         text-align: center;
         margin-bottom: 1.5rem;
     }
+
     .upload-container {
-        background-color: var(--background-color);
+        background-color: transparent;
         border-radius: 8px;
         padding: 20px;
         margin: 20px 0;
-        border: 2px dashed var(--border-color);
+        border: 2px dashed var(--background-color-dark);
     }
-    .stAudio {
-        width: 100%;
-    }
+
     .warning {
         padding: 10px;
         border-radius: 8px;
-        background-color: rgba(255, 170, 0, 0.2);
+        background-color: #0a0a0a;
         margin-bottom: 20px;
+        color: inherit;
     }
+
     .team-section {
         margin-top: 3rem;
         text-align: center;
         padding-top: 2rem;
-        border-top: 1px solid var(--border-color);
+        border-top: 1px solid var(--border-color-light);
     }
-    .team-title {
-        font-size: 1.2rem;
-        margin-bottom: 1rem;
-    }
+
     .team-members {
         display: flex;
         justify-content: center;
         flex-wrap: wrap;
         gap: 10px;
     }
+
     .team-member {
-        background-color: var(--background-color);
+        background-color: rgba(58, 89, 209, 0.1);
         padding: 5px 15px;
         border-radius: 50px;
         font-size: 0.9rem;
     }
-    
-    /* Light mode styles */
-    [data-theme="light"] {
-        --text-color: #023047;
-        --background-color: #f1f3f5;
-        --border-color: #ccc;
-    }
-    
-    /* Dark mode styles */
-    [data-theme="dark"] {
-        --text-color: #f8f9fa;
-        --background-color: #1a1a1a;
-        --border-color: #444;
-    }
-    
-    /* Apply theme variables */
-    body {
-        color: var(--text-color);
-    }
 </style>
-
-<script>
-    // Detect system theme and set custom variables
-    const theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    document.body.setAttribute('data-theme', theme);
-</script>
 """, unsafe_allow_html=True)
 
 PREDICT_DIR = os.path.abspath(
@@ -130,7 +125,6 @@ sys.path.append(PREDICT_DIR)
 
 # Import the main function from predict.py
 from predict import main
-
 # Create the directory structure
 def setup_directories():
     # Input/output folders
@@ -176,37 +170,26 @@ MODEL_CONFIGS = {
 def download_models_from_gdrive():
     """Download all model checkpoints from Google Drive"""
     for model_id, model_config in MODEL_CONFIGS.items():
-        # Full path for the checkpoint file
         checkpoint_path = os.path.join(CHECKPOINT_DIR, model_config["checkpoint_filename"])
         model_config["checkpoint_path"] = checkpoint_path
 
-        # Check if model already exists
         if os.path.exists(checkpoint_path):
-            st.success(f"Model '{model_config['name']}' already downloaded.")
+            #st.markdown(f"Model '{model_config['name']}' is available.")
+            #st.success(f"✅ Model '{model_config['name']}' already exists.")
             continue
 
-        # # Extract file ID from URL or use directly if it's just the ID
-        # raw_id = model_config["gdrive_id"]
-        # if "drive.google.com" in raw_id:
-        #     try:
-        #         raw_id = raw_id.split("/d/")[1].split("/")[0]
-        #     except IndexError:
-        #         st.error(f"Could not parse Google Drive file ID for model '{model_config['name']}'.")
-        #         continue
-
-        # # Create the download URL
-        download_id = model_config['gdrive_id']
-
-        # Download model from Google Drive
-        with st.spinner(f"Downloading model '{model_config['name']}' from Google Drive... This may take a few minutes."):
-            try:
-                gdown.download(id = download_id, output=checkpoint_path, quiet=False)
-                if os.path.exists(checkpoint_path):
-                    st.success(f"Model '{model_config['name']}' downloaded successfully!")
-                else:
-                    st.error(f"Failed to download model '{model_config['name']}'.")
-            except Exception as e:
-                st.error(f"Error downloading model '{model_config['name']}': {e}")
+        try:
+            with st.spinner(f"Downloading '{model_config['name']}'..."):
+                gdown.download(id=model_config["gdrive_id"], output=checkpoint_path, quiet=False)
+            if os.path.exists(checkpoint_path):
+                #st.markdown(f"Model '{model_config['name']}' is available.")
+                continue
+            else:
+                #st.markdown(f" Failed to download '{model_config['name']}'")
+                continue
+        except Exception as e:
+            #st.markdown(f"Download error for '{model_config['name']}': {e}")
+            continue
     return MODEL_CONFIGS
 
 # Function to get audio duration using ffprobe
@@ -330,8 +313,15 @@ def main():
     # App header and branding
     st.markdown('<div class="logo">Noise Assassins</div>', unsafe_allow_html=True)
     st.markdown('<p class="tagline">Professional Audio Denoising Solutions</p>', unsafe_allow_html=True)
-    st.title("Audio Denoiser")
-    st.write("Upload a noisy audio file and get a clean, noise-free version instantly")
+    #st.title("Audio Denoiser")
+    st.markdown(
+    """
+    <div style='text-align: center; font-size: 1.2rem;'>
+        Upload a noisy audio file and get a clean, noise-free version instantly
+    </div>
+    """,
+    unsafe_allow_html=True
+)
     
     # Download models from Google Drive
     models = download_models_from_gdrive()
@@ -367,7 +357,6 @@ def main():
             with st.spinner("Processing audio..."):
                 # Get the selected model's checkpoint path
                 model_checkpoint = models[selected_model_id]["checkpoint_path"]
-                st.markdown(model_checkpoint)
                 
                 # Process the audio
                 original_file, processed_file, was_trimmed = process_audio(
