@@ -20,3 +20,4 @@ gdown
 ffmpeg
 ffprobe
 stempeg
+werkzeug
