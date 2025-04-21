@@ -121,10 +121,11 @@ st.markdown("""
 </script>
 """, unsafe_allow_html=True)
 
-# Path to predict.py
 PREDICT_DIR = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '..', 'DL-Audio-Denoising-_AML-Project-Wave-U-Ner-V1', 'src', 'models', 'Wave-U-Net-Pytorch')
+    os.path.join(os.path.dirname(__file__), '..', 'src', 'models', 'Wave-U-Net-Pytorch')
 )
+
+# Step 2: Add to system path
 sys.path.append(PREDICT_DIR)
 
 # Import the main function from predict.py
