@@ -18,3 +18,5 @@ flask
 gunicorn
 gdown
 ffmpeg
+ffprobe
+stempeg
