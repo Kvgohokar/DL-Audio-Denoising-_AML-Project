@@ -152,7 +152,7 @@ if WAVE_U_NET_DIR not in sys.path:
 # Define model configurations with dummy GDrive IDs (replace these with your actual IDs)
 MODEL_CONFIGS = {
     "wave_u_net": {
-        "name": "Wave-U-Net (Default)",
+        "name": "Wave-U-Net",
         "gdrive_id": "1yqU7jYETAqlJNAYvfbY6o6xmWCwYtQKc",  # Replace with actual ID
         "checkpoint_filename": "checkpoint_wave_u_net",
         "checkpoint_path": None  # Will be set after download
