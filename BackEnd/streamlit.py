@@ -116,15 +116,15 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-PREDICT_DIR = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '..', 'src', 'models', 'Wave-U-Net-Pytorch')
-)
+# PREDICT_DIR = os.path.abspath(
+#     os.path.join(os.path.dirname(__file__), '..', 'src', 'models', 'Wave-U-Net-Pytorch')
+# )
 
-# Step 2: Add to system path
-sys.path.append(PREDICT_DIR)
+# # Step 2: Add to system path
+# sys.path.append(PREDICT_DIR)
 
-# Import the main function from predict.py
-from predict import main
+# # Import the main function from predict.py
+# from predict import main
 # Create the directory structure
 def setup_directories():
     # Input/output folders
@@ -157,10 +157,10 @@ MODEL_CONFIGS = {
         "checkpoint_filename": "checkpoint_wave_u_net",
         "checkpoint_path": None  # Will be set after download
     },
-    "alternative_model": {
-        "name": "Alternative Model",
-        "gdrive_id": "2eFGhDxAKrbtf6kTqf3aDDTVEHGtqJP1Y",  # Replace with actual ID
-        "checkpoint_filename": "checkpoint_alternative",
+    "segan": {
+        "name": "SEGAN",
+        "gdrive_id": "1YHtTxEMqrjmoPtbkdhafdwOwpjJfqjfp",  # Replace with actual ID
+        "checkpoint_filename": "checkpoint_segan",
         "checkpoint_path": None  # Will be set after download
     }
 }
@@ -228,25 +228,24 @@ def trim_audio(input_path, output_path, duration=10.0):
         st.error(f"Error trimming audio: {e}")
         return False
 
-# Process function
-def process_audio(uploaded_file, model_checkpoint):
+def process_audio(uploaded_file, model_checkpoint, model_type):
     try:
-        # Create temp file to save the uploaded file
+        # Save uploaded file to temp
         with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp_file:
             temp_input_path = temp_file.name
             with open(temp_input_path, 'wb') as f:
                 f.write(uploaded_file.getvalue())
-        
-        # Check audio duration
+
+        # Check duration
         duration = get_audio_duration(temp_input_path)
         was_trimmed = False
-        
-        # Generate filename for the processed audio
+
+        # Define filenames and paths
         original_filename = secure_filename(uploaded_file.name)
         base_filename = os.path.splitext(original_filename)[0]
         input_filename = f"{base_filename}.wav"
         input_path = os.path.join(INPUT_FOLDER, input_filename)
-        
+
         # Process the audio file
         if duration and duration > 10.0:
             # Trim to 10 seconds
@@ -260,54 +259,78 @@ def process_audio(uploaded_file, model_checkpoint):
             with open(input_path, 'wb') as f:
                 with open(temp_input_path, 'rb') as tf:
                     f.write(tf.read())
-        
-        # Clean up temp file
+
         os.unlink(temp_input_path)
-        
-        # Import the main function from predict.py
-        try:
-            from predict import main as predict_main
-        except ImportError:
-            raise Exception("Failed to import prediction module. Please check if the model code is correctly set up.")
-        
-        # Setup args for predict.main
-        args = Namespace(
-            instruments=['clean'],
-            cuda=False,
-            features=32,
-            load_model=model_checkpoint,
-            batch_size=4,
-            levels=6,
-            depth=1,
-            sr=16000,
-            channels=1,
-            kernel_size=5,
-            output_size=2.0,
-            strides=4,
-            conv_type='gn',
-            res='fixed',
-            separate=0,
-            feature_growth='double',
-            input=input_path,
-            output=OUTPUT_FOLDER,
-            patience=10
-        )
-        
-        # Run prediction
-        predict_main(args)
-        
-        # Output file is saved as: Outputs/<original_filename>_clean.wav
-        cleaned_filename = f"{input_filename}_clean.wav"
-        cleaned_path = os.path.join(OUTPUT_FOLDER, cleaned_filename)
-        
-        if not os.path.exists(cleaned_path):
-            raise Exception("Output file not found. Processing may have failed.")
-        
-        return input_path, cleaned_path, was_trimmed
-    
+        # Run different model logic
+        if model_type == MODEL_CONFIGS['wave_u_net']['name']:
+            try:
+                # Path to predict.py
+                PREDICT_DIR = os.path.abspath(
+                    os.path.join(os.path.dirname(__file__), '..', 'src', 'models', 'Wave-U-Net-Pytorch')
+                )
+                sys.path.append(PREDICT_DIR)
+
+                # Import the main function from predict.py
+                from predict import main as predict_main
+
+            except ImportError:
+                raise Exception("Wave-U-Net prediction module not found.")
+
+            args = Namespace(
+                instruments=['clean'],
+                cuda=False,
+                features=32,
+                load_model=model_checkpoint,
+                batch_size=4,
+                levels=6,
+                depth=1,
+                sr=16000,
+                channels=1,
+                kernel_size=5,
+                output_size=2.0,
+                strides=4,
+                conv_type='gn',
+                res='fixed',
+                separate=0,
+                feature_growth='double',
+                input=input_path,
+                output=OUTPUT_FOLDER,
+                patience=10
+            )
+
+            predict_main(args)
+
+            # Output paths
+            cleaned_path = os.path.join(OUTPUT_FOLDER, f"{input_filename}_clean.wav")
+            noise_path = os.path.join(OUTPUT_FOLDER, f"{input_filename}_noise.wav")
+
+            if not os.path.exists(cleaned_path):
+                raise Exception("Clean output not found.")
+
+            return input_path, cleaned_path, was_trimmed
+
+        elif model_type == MODEL_CONFIGS['segan']['name']:
+            SEGAN_PREDICT_DIR = os.path.abspath(
+                os.path.join(os.path.dirname(__file__), '..', 'src', 'models', 'SEGAN')
+            )
+            sys.path.append(SEGAN_PREDICT_DIR)
+
+            # Import SEGAN prediction function
+            from predict_segan import denoise
+            cleaned_path = os.path.join(OUTPUT_FOLDER, f"{base_filename}_enhanced.wav")
+            denoise(input_path =input_path,output_path = cleaned_path,model_path =model_checkpoint)
+
+            if not os.path.exists(cleaned_path):
+                raise Exception("Cleaned segan output not found.")
+
+            return input_path, cleaned_path, was_trimmed
+
+        else:
+            raise Exception(f"Unsupported model type: {model_type}")
+
     except Exception as e:
         raise Exception(f"Error during processing: {str(e)}")
-
+    
 # Main app
 def main():
     # App header and branding
@@ -360,7 +383,7 @@ def main():
                 
                 # Process the audio
                 original_file, processed_file, was_trimmed = process_audio(
-                    uploaded_file, model_checkpoint
+                    uploaded_file, model_checkpoint, selected_model_name
                 )
                 
                 # Update session state
