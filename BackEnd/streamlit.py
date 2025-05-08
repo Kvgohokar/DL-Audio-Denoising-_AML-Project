@@ -127,22 +127,20 @@ st.markdown("""
 # from predict import main
 # Create the directory structure
 def setup_directories():
-    # Input/output folders
     input_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), 'Inputs'))
     output_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), 'Outputs'))
     model_folder = os.path.abspath(os.path.join(os.path.dirname(__file__), 'models'))
-    wave_u_net_folder = os.path.abspath(os.path.join(model_folder, 'Wave-U-Net-Pytorch'))
-    checkpoint_folder = os.path.abspath(os.path.join(wave_u_net_folder, 'checkpoints'))
-    
-    # Ensure folders exist
+    checkpoint_folder = os.path.abspath(os.path.join(model_folder, 'checkpoints'))  # <-- shared
+
+    # Create separate folders inside checkpoints later
     os.makedirs(input_folder, exist_ok=True)
     os.makedirs(output_folder, exist_ok=True)
     os.makedirs(model_folder, exist_ok=True)
-    os.makedirs(wave_u_net_folder, exist_ok=True)
     os.makedirs(checkpoint_folder, exist_ok=True)
-    
-    return input_folder, output_folder, wave_u_net_folder, checkpoint_folder
 
+    return input_folder, output_folder, model_folder, checkpoint_folder
+
+# Unpack as needed
 INPUT_FOLDER, OUTPUT_FOLDER, WAVE_U_NET_DIR, CHECKPOINT_DIR = setup_directories()
 
 # Add Wave-U-Net directory to path so we can import prediction module
@@ -170,28 +168,31 @@ MODEL_CONFIGS = {
 def download_models_from_gdrive():
     """Download all model checkpoints from Google Drive"""
     for model_id, model_config in MODEL_CONFIGS.items():
-        checkpoint_path = os.path.join(CHECKPOINT_DIR, model_config["checkpoint_filename"])
-        model_config["checkpoint_path"] = checkpoint_path
+        # Route based on model_id
+        if model_id == "wave_u_net":
+            model_subdir = os.path.join(CHECKPOINT_DIR, "Wave-U-Net")
+        elif model_id == "segan":
+            model_subdir = os.path.join(CHECKPOINT_DIR, "SEGAN")
+        # else:
+        #     model_subdir = CHECKPOINT_DIR  # Default fallback
+
+        os.makedirs(model_subdir, exist_ok=True)
+
+        checkpoint_path = os.path.join(model_subdir, model_config["checkpoint_filename"])
+        model_config["checkpoint_path"] = checkpoint_path  # Update config with full path
 
         if os.path.exists(checkpoint_path):
-            #st.markdown(f"Model '{model_config['name']}' is available.")
-            #st.success(f"✅ Model '{model_config['name']}' already exists.")
-            continue
+            continue  # Already downloaded
 
         try:
             with st.spinner(f"Downloading '{model_config['name']}'..."):
                 gdown.download(id=model_config["gdrive_id"], output=checkpoint_path, quiet=False)
-            if os.path.exists(checkpoint_path):
-                #st.markdown(f"Model '{model_config['name']}' is available.")
-                continue
-            else:
-                #st.markdown(f" Failed to download '{model_config['name']}'")
-                continue
+            if not os.path.exists(checkpoint_path):
+                st.warning(f"❌ Failed to download '{model_config['name']}'")
         except Exception as e:
-            #st.markdown(f"Download error for '{model_config['name']}': {e}")
-            continue
+            st.warning(f"⚠️ Download error for '{model_config['name']}': {e}")
     return MODEL_CONFIGS
-
+    
 # Function to get audio duration using ffprobe
 def get_audio_duration(file_path):
     cmd = [
